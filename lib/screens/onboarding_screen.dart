@@ -20,8 +20,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   int _step = 0;
 
   late AnimationController _pageController;
-  late Animation<double> _slideOutAnim;
-  late Animation<double> _slideInAnim;
 
   final List<String> _avatars = [
     '🐶', '🐱', '🐼', '🦊', '🐻', '🐰',
@@ -34,12 +32,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     _pageController = AnimationController(
       vsync: this,
       duration: AppTheme.animNormal,
-    );
-    _slideOutAnim = Tween(begin: 0.0, end: -1.0).animate(
-      CurvedAnimation(parent: _pageController, curve: Curves.easeIn),
-    );
-    _slideInAnim = Tween(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _pageController, curve: Curves.easeOut),
     );
   }
 
@@ -79,10 +71,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         );
       }
     }
-  }
-
-  Future<SharedPreferences> _getPrefs() {
-    return SharedPreferences.getInstance();
   }
 
   Widget _buildWelcome() {

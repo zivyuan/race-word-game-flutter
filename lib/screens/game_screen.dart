@@ -7,6 +7,9 @@ import '../models/models.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/combo_effect.dart';
+import '../widgets/achievement_dialog.dart';
+import '../screens/voice_score_screen.dart';
 
 enum GamePhase { idle, countdown, playing, result }
 
@@ -35,6 +38,15 @@ class _GameScreenState extends State<GameScreen>
   Color _feedbackColor = Colors.transparent;
   Timer? _timer;
   final Random _random = Random();
+  
+  // 连击管理器
+  final ComboManager _comboManager = ComboManager();
+  
+  // 游戏开始时间
+  DateTime? _gameStartTime;
+  
+  // 获取用户ID
+  String? get _userId => _getUserId();
 
   // 倒计时 key 用于触发动画重建
   int _countdownKey = 0;
@@ -93,12 +105,13 @@ class _GameScreenState extends State<GameScreen>
 
   void _startPlaying() {
     if (widget.cards.isEmpty) return;
+    _gameStartTime = DateTime.now();
     setState(() => _phase = GamePhase.playing);
     _speakRandomCard();
   }
 
   void _speakRandomCard() {
-    final index = _random.nextInt(widget.cards.length);
+    final index = _random.nextInt(widget.widgets.length);
     setState(() {
       _currentCard = widget.cards[index];
       _showFeedback = false;
@@ -106,10 +119,23 @@ class _GameScreenState extends State<GameScreen>
     _tts.speak(_currentCard!.word);
   }
 
+  String? _getUserId() {
+    // 这里应该从本地存储获取用户ID
+    // 暂时返回一个固定值
+    return 'test-user-123';
+  }
+
   Future<void> _onCardTapped(CardItem card) async {
     if (_currentCard == null || _showFeedback) return;
 
     final correct = card.id == _currentCard!.id;
+    final renderBox = context.findRenderObject();
+    Offset? cardPosition;
+    
+    if (renderBox is RenderBox) {
+      cardPosition = renderBox.localToGlobal(Offset.zero);
+    }
+    
     setState(() {
       _total++;
       _showFeedback = true;
@@ -119,8 +145,14 @@ class _GameScreenState extends State<GameScreen>
         if (_streak > _maxStreak) _maxStreak = _streak;
         _feedbackText = _streak > 1 ? '连续答对 $_streak 次！🔥' : '答对了！✅';
         _feedbackColor = AppTheme.successColor;
+        
+        // 触发连击特效
+        if (_streak >= 3) {
+          _comboManager.incrementCombo(context, position: cardPosition);
+        }
       } else {
         _streak = 0;
+        _comboManager.resetCombo();
         _feedbackText = '正确答案: ${_currentCard!.word}';
         _feedbackColor = AppTheme.dangerColor;
       }
@@ -147,6 +179,30 @@ class _GameScreenState extends State<GameScreen>
   void _endGame() {
     _resultController.forward(from: 0);
     setState(() => _phase = GamePhase.result);
+    
+    // 检查成就
+    _checkAchievements();
+  }
+  
+  void _checkAchievements() {
+    if (_userId == null) return;
+    
+    final gameData = {
+      'score': _score,
+      'total': _total,
+      'accuracy': _total > 0 ? (_score / _total * 100).round() : 0,
+      'maxCombo': _maxStreak,
+      'completed': true,
+      'timeTaken': _gameStartTime != null ? 
+          DateTime.now().difference(_gameStartTime!).inSeconds : 0,
+      'uniqueCards': widget.cards.length,
+    };
+    
+    AchievementUnlockDialog.checkAndShowAchievements(
+      context, 
+      _userId!, 
+      gameData
+    );
   }
 
   @override
@@ -598,7 +654,7 @@ class _GameScreenState extends State<GameScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppTheme.spacingXxl),
+                  const SizedBox(height: AppTheme.spacingXl),
                   Row(
                     children: [
                       Expanded(
@@ -616,6 +672,47 @@ class _GameScreenState extends State<GameScreen>
                             child: const Center(
                               child: Text(
                                 '返回',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: BounceButton(
+                          onPressed: () {
+                            if (_currentCard != null && _userId != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VoiceScoreScreen(
+                                    word: _currentCard!.word,
+                                    userId: _userId!,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: Container(
+                            height: 52,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppTheme.primaryColor,
+                                  Colors.blue.shade400,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                  AppTheme.radiusMd),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                '语音评分',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,

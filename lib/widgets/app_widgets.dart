@@ -87,7 +87,6 @@ class _AnimBuilder extends StatelessWidget {
   final Widget? child;
 
   const _AnimBuilder({
-    super.key,
     required this.animation,
     required this.builder,
     this.child,
@@ -108,7 +107,6 @@ class AnimatedBuilder2 extends AnimatedWidget {
   final Widget? child;
 
   const AnimatedBuilder2({
-    super.key,
     required Animation<double> listenable,
     required this.builder,
     this.child,
@@ -144,7 +142,7 @@ class FadeIn extends StatefulWidget {
 class _FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset>? _slideAnimation;
+  Animation<Offset>? _slideAnimation;
 
   @override
   void initState() {

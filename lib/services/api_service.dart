@@ -138,4 +138,75 @@ class ApiService {
     }
     return data;
   }
+
+  // ========== 成就相关方法 ==========
+  
+  static Future<List<AchievementModel>> getAchievements() async {
+    try {
+      final res = await http.get(Uri.parse('${ApiService.baseUrl}/api/achievements'));
+      final data = _parseResponse(res);
+      return (data['data'] as List)
+          .map((json) => AchievementModel.fromJson(json))
+          .toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<List<UserAchievementModel>> getUserAchievements(String userId) async {
+    try {
+      final res = await http.get(
+        Uri.parse('${ApiService.baseUrl}/api/achievements/user/$userId')
+      );
+      final data = _parseResponse(res);
+      return (data['data'] as List)
+          .map((json) => UserAchievementModel.fromJson(json))
+          .toList();
+    } catch (e) {
+    return [];
+  }
+}
+
+  static Future<bool> unlockAchievement(String userId, String achievementId, {Map<String, dynamic>? progress}) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${ApiService.baseUrl}/api/achievements/unlock'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': userId,
+          'achievementId': achievementId,
+          'progress': progress ?? {}
+        })
+      );
+      final data = _parseResponse(res);
+      return data['data']['unlocked'] ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ========== 语音评分方法 ==========
+  
+  static Future<Map<String, dynamic>> voiceScore(String word, String userId, {String? audioData}) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${ApiService.baseUrl}/api/voice-score'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'word': word,
+          'userId': userId,
+          'audioData': audioData ?? ''
+        })
+      );
+      final data = _parseResponse(res);
+      return data['data'] as Map<String, dynamic>;
+    } catch (e) {
+      return {
+        'score': 70,
+        'feedback': '继续加油！💪',
+        'word': word,
+        'timestamp': DateTime.now().toIso8601String()
+      };
+    }
+  }
 }

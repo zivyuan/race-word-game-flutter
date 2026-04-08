@@ -1,26 +1,27 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:race_word_game/theme/app_theme.dart';
 
 void main() {
   group('AppTheme', () {
     test('primary color is defined', () {
-      expect(AppTheme.primaryColor, const Color(0xFF7C3AED));
+      expect(AppTheme.primaryColor, const Color(0xFF6C5CE7));
     });
 
     test('secondary color is defined', () {
-      expect(AppTheme.secondaryColor, const Color(0xFF2563EB));
+      expect(AppTheme.secondaryColor, const Color(0xFF0984E3));
     });
 
     test('accent color is defined', () {
-      expect(AppTheme.accentColor, const Color(0xFFF59E0B));
+      expect(AppTheme.accentColor, const Color(0xFFFDCB6E));
     });
 
     test('success color is defined', () {
-      expect(AppTheme.successColor, const Color(0xFF10B981));
+      expect(AppTheme.successColor, const Color(0xFF00B894));
     });
 
     test('danger color is defined', () {
-      expect(AppTheme.dangerColor, const Color(0xFFEF4444));
+      expect(AppTheme.dangerColor, const Color(0xFFFF6B6B));
     });
 
     test('cardSetColors has 8 entries', () {
@@ -33,12 +34,16 @@ void main() {
       }
     });
 
-    test('theme is Material3', () {
-      expect(AppTheme.theme.useMaterial3, true);
+    test('light theme is Material3', () {
+      expect(AppTheme.lightTheme.useMaterial3, true);
     });
 
-    test('theme has light brightness', () {
-      expect(AppTheme.theme.brightness, Brightness.light);
+    test('light theme has light brightness', () {
+      expect(AppTheme.lightTheme.brightness, Brightness.light);
+    });
+
+    test('dark theme has dark brightness', () {
+      expect(AppTheme.darkTheme.brightness, Brightness.dark);
     });
   });
 
@@ -47,16 +52,16 @@ void main() {
       expect(AppTheme.masteryColor('mastered'), AppTheme.successColor);
     });
 
-    test('returns accentColor for learning', () {
-      expect(AppTheme.masteryColor('learning'), AppTheme.accentColor);
+    test('returns accentDark for learning', () {
+      expect(AppTheme.masteryColor('learning'), AppTheme.accentDark);
     });
 
-    test('returns grey for new', () {
-      expect(AppTheme.masteryColor('new'), Colors.grey);
+    test('returns textHint for new', () {
+      expect(AppTheme.masteryColor('new'), AppTheme.textHint);
     });
 
-    test('returns grey for unknown level', () {
-      expect(AppTheme.masteryColor('unknown'), Colors.grey);
+    test('returns textHint for unknown level', () {
+      expect(AppTheme.masteryColor('unknown'), AppTheme.textHint);
     });
   });
 
