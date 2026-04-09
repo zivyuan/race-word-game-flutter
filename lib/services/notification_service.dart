@@ -63,6 +63,8 @@ class NotificationService {
         iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
@@ -112,7 +114,7 @@ class NotificationService {
       '连续学习提醒',
       channelDescription: '保持学习连续性的提醒',
       importance: Importance.defaultImportance,
-      priority: Priority.defaultImportance,
+      priority: Priority.defaultPriority,
     );
     const iosDetails = DarwinNotificationDetails();
     const details = NotificationDetails(android: androidDetails, iOS: iosDetails);

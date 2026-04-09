@@ -148,7 +148,7 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget _buildOverview() {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
-      decoration: AppDecorations.cardDecoration(context, radius: AppTheme.radiusXl),
+      decoration: AppDecorations.cardDecoration(context: context, radius: AppTheme.radiusXl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -319,7 +319,7 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget _buildWeeklyActivity() {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
-      decoration: AppDecorations.cardDecoration(context, radius: AppTheme.radiusXl),
+      decoration: AppDecorations.cardDecoration(context: context, radius: AppTheme.radiusXl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -441,7 +441,7 @@ class _StatsScreenState extends State<StatsScreen> {
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
-      decoration: AppDecorations.cardDecoration(context, radius: AppTheme.radiusXl),
+      decoration: AppDecorations.cardDecoration(context: context, radius: AppTheme.radiusXl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -557,7 +557,7 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget _buildAchievements() {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
-      decoration: AppDecorations.cardDecoration(context, radius: AppTheme.radiusXl),
+      decoration: AppDecorations.cardDecoration(context: context, radius: AppTheme.radiusXl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,3 +1,5 @@
+export 'achievement_models.dart';
+
 class UserProfile {
   final String id;
   final String nickname;

@@ -16,16 +16,14 @@ class ConnectivityService {
   Future<void> init() async {
     final result = await _connectivity.checkConnectivity();
     _updateStatus(result);
-    _connectivity.onConnectivityChanged.listen(_updateStatus);
+    _connectivity.onConnectivityChanged.listen((result) => _updateStatus(result));
   }
 
-  void _updateStatus(List<ConnectivityResult> results) {
+  void _updateStatus(ConnectivityResult result) {
     final wasOnline = _isOnline;
-    _isOnline = results.any((r) =>
-      r == ConnectivityResult.wifi ||
-      r == ConnectivityResult.mobile ||
-      r == ConnectivityResult.ethernet
-    );
+    _isOnline = result == ConnectivityResult.wifi ||
+        result == ConnectivityResult.mobile ||
+        result == ConnectivityResult.ethernet;
     if (wasOnline != _isOnline) {
       _controller.add(_isOnline);
     }

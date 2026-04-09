@@ -227,7 +227,7 @@ class _PracticeScreenState extends State<PracticeScreen>
                       width: double.infinity,
                       padding: const EdgeInsets.all(AppTheme.spacingXl),
                       decoration: AppDecorations.cardDecoration(
-                        context,
+                        context: context,
                         radius: AppTheme.radiusXl,
                       ),
                       child: Column(
@@ -277,8 +277,8 @@ class _PracticeScreenState extends State<PracticeScreen>
                   const SizedBox(height: AppTheme.spacingXl),
 
                   // Microphone button
-                  AnimatedBuilder(
-                    animation: _micScale,
+                  ListenableBuilder(
+                    listenable: _micScale,
                     builder: (context, child) {
                       return Transform.scale(
                         scale: _isListening ? _micScale.value : 1.0,

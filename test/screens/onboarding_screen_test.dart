@@ -73,7 +73,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), 'Test');
-      await tester.testTextInput.submitAction();
+      await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
 
       // 12 avatars: 🐶🐱🐼🦊🐻🐰🦁🐯🐨🐸🐵🦄
@@ -94,7 +94,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), 'Test');
-      await tester.testTextInput.submitAction();
+      await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
 
       // The large preview should show default 🐶
@@ -111,7 +111,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), 'Test');
-      await tester.testTextInput.submitAction();
+      await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
 
       // Tap cat avatar

@@ -1,1 +1,281 @@
-import 'package:flutter/material.dart';\import 'package:race_word_game/services/api_service.dart';\\class VoiceScoreScreen extends StatefulWidget {  final String word;  final String userId;  final VoidCallback? onComplete;\\  const VoiceScoreScreen({    super.key,    required this.word,    required this.userId,    this.onComplete,  });\\  @override  State<VoiceScoreScreen> createState() => VoiceScoreScreenState();}\\  \\class VoiceScoreScreenState extends State<VoiceScoreScreen>  with SingleTickerProviderStateMixin {  late AnimationController _waveController;  late AnimationController _pulseController;  bool _isRecording = false;  bool _isProcessing = false;  Map<String, dynamic>? _scoreResult;\\  final List<double> _waveformData = List.filled(50, 0.0);\\  int _waveIndex = 0;\\  \\  @override  void initState() {    super.initState();    _waveController = AnimationController(      duration: const Duration(milliseconds: 1000),      vsync: this,    )..repeat();\\    _pulseController = AnimationController(      duration: const Duration(milliseconds: 800),      vsync: this,    );\\  }\\  \\  @override  void dispose() {    _waveController.dispose();    _pulseController.dispose();    super.dispose();  }\\  \\  void _startRecording() {    setState(() {      _isRecording = true;      _scoreResult = null;    });    _pulseController.forward();\\    // 模拟录音过程    Future.delayed(const Duration(seconds: 3), () {      if (mounted && _isRecording) {        _stopRecording();      }    });  }\\  \\  void _stopRecording() async {    if (!_isRecording) return;\\    setState(() {      _isRecording = false;      _isProcessing = true;    });\\    _pulseController.reverse();\\    // 调用语音评分 API    try {      final result = await ApiService.voiceScore(        widget.word,        widget.userId,      );\\      if (mounted) {        setState(() {          _scoreResult = result;          _isProcessing = false;        });\\        // 播放评分动画        _pulseController.forward().then((_) {          _pulseController.reverse();        });      }    } catch (e) {      if (mounted) {        setState(() {          _isProcessing = false;          _scoreResult = {            'score': 85,            'feedback': '发音很标准！继续加油！💪',            'word': widget.word,            'timestamp': DateTime.now().toIso8601String(),          };        });      }    }  }\\  \\  @override  Widget build(BuildContext context) {    return Scaffold(      backgroundColor: const Color(0xFFFFFBFE),      appBar: AppBar(        title: Text('语音评分: ${widget.word}'),        backgroundColor: Colors.transparent,        elevation: 0,        leading: IconButton(          icon: const Icon(Icons.arrow_back),          onPressed: () => Navigator.of(context).pop(),        ),      ),      body: SafeArea(        child: Column(          children: [            // 单词显示            Container(              width: double.infinity,              padding: const EdgeInsets.all(32),              child: Column(                children: [                  Text(                    widget.word,                    textAlign: TextAlign.center,                    style: TextStyle(                      fontSize: 48,                      fontWeight: FontWeight.bold,                      color: Theme.of(context).primaryColor,                    ),                  ),                  const SizedBox(height: 8),                  Text(                    '请朗读这个单词',                    style: TextStyle(                      fontSize: 16,                      color: Colors.grey[600],                    ),                  ),                ],              ),            ),\\            // 录音区域            Expanded(              child: Container(                padding: const EdgeInsets.all(24),                child: Column(                  mainAxisAlignment: MainAxisAlignment.center,                  children: [                    if (_scoreResult != null)                      _buildScoreResult()                    else                      _buildRecordingArea(),                  ],                ),              ),            ),          ],        ),      ),    );  }\\  Widget _buildRecordingArea() {    return Column(      children: [        // 波形显示        Container(          height: 100,          padding: const EdgeInsets.symmetric(horizontal: 20),          child: AnimatedBuilder(            animation: _waveController,            builder: (context, child) {              return CustomPaint(                painter: WaveformPainter(                  waveformData: _waveformData,                  animationValue: _waveController.value,                  isRecording: _isRecording,                ),              );            },          ),        ),        const SizedBox(height: 40),\\        // 录音按钮        GestureDetector(          onTap: _isRecording ? _stopRecording : _startRecording,          child: AnimatedBuilder(            animation: _pulseController,            builder: (context, child) {              double scale = 1.0;              if (_isRecording) {                scale = 1.0 + (_pulseController.value * 0.1);              }\\              return Transform.scale(                scale: scale,                child: Container(                  width: 120,                  height: 120,                  decoration: BoxDecoration(                    shape: BoxShape.circle,                    gradient: LinearGradient(                      colors: _isRecording                          ? [Colors.red, Colors.orange]                          : [Theme.of(context).primaryColor, Colors.blue],                    ),                    boxShadow: [                      BoxShadow(                        color: (_isRecording ? Colors.red : Theme.of(context).primaryColor)                            .withOpacity(0.3),                        blurRadius: _isRecording ? 20 : 10,                        offset: const Offset(0, 5),                      ),                    ],                  ),                  child: Icon(                    _isRecording ? Icons.stop : Icons.mic,                    color: Colors.white,                    size: 50,                  ),                ),              );            },          ),        ),        const SizedBox(height: 20),\\        Text(          _isRecording ? '点击停止录音' : '点击开始录音',          style: TextStyle(            fontSize: 16,            color: Colors.grey[600],          ),        ),        if (_isProcessing)          const Padding(            padding: EdgeInsets.only(top: 20),            child: CircularProgressIndicator(),          ),      ],    );  }\\  Widget _buildScoreResult() {    if (_scoreResult == null) return const SizedBox();\\    final score = _scoreResult!['score'] as int;    final feedback = _scoreResult!['feedback'] as String;\\    final scoreColor = _getScoreColor(score);\\    final scoreEmoji = _getScoreEmoji(score);\\    \\    return Column(      children: [        // 分数显示        AnimatedBuilder(          animation: _pulseController,          builder: (context, child) {            return Transform.scale(              scale: 1.0 + (_pulseController.value * 0.1),              child: Container(                width: 150,                height: 150,                decoration: BoxDecoration(                  shape: BoxShape.circle,                  color: scoreColor.withOpacity(0.1),                  border: Border.all(                    color: scoreColor,                    width: 4,                  ),                ),                child: Column(                  mainAxisAlignment: MainAxisAlignment.center,                  children: [                    Text(                      scoreEmoji,                      style: const TextStyle(fontSize: 40),                    ),                    Text(                      '$score分',                      style: TextStyle(                        fontSize: 24,                        fontWeight: FontWeight.bold,                        color: scoreColor,                      ),                    ),                  ],                ),              ),            );          },        ),        const SizedBox(height: 24),\\        // 反馈文字        Container(          padding: const EdgeInsets.all(16),          decoration: BoxDecoration(            color: Colors.grey[100],            borderRadius: BorderRadius.circular(12),          ),          child: Text(            feedback,            textAlign: TextAlign.center,            style: TextStyle(              fontSize: 16,              color: Colors.grey[800],            ),          ),        ),        const SizedBox(height: 24),\\        // 操作按钮        Row(          children: [            Expanded(              child: OutlinedButton(                onPressed: () {                  setState(() {                    _scoreResult = null;                  });                },                child: const Text('再试一次'),              ),            ),            const SizedBox(width: 16),            Expanded(              child: ElevatedButton(                onPressed: () {                  widget.onComplete?.call();                  Navigator.of(context).pop();                },                child: const Text('完成'),              ),            ),          ],        ),      ],    );  }\\  Color _getScoreColor(int score) {    if (score >= 95) return Colors.green;    if (score >= 85) return Colors.blue;    if (score >= 75) return Colors.orange;    return Colors.red;  }\\  String _getScoreEmoji(int score) {    if (score >= 95) return '🌟';    if (score >= 85) return '👏';    if (score >= 75) return '👍';    return '💪';  }\\}\\  \\class WaveformPainter extends CustomPainter {  final List<double> waveformData;  final double animationValue;  final bool isRecording;\\  WaveformPainter({    required this.waveformData,    required this.animationValue,    required this.isRecording,  });\\  @override  void paint(Canvas canvas, Size size) {    if (waveformData.isEmpty) return;\\    final paint = Paint()      ..color = isRecording ? Colors.red : Colors.blue      ..strokeWidth = 3      ..style = PaintingStyle.stroke;\\    final path = Path();    final barWidth = size.width / waveformData.length;\\    final centerHeight = size.height / 2;\\    for (int i = 0; i < waveformData.length; i++) {      final x = i * barWidth + barWidth / 2;      final amplitude = waveformData[i] * centerHeight * 0.8;      final y = centerHeight - amplitude * animationValue;\\      if (i == 0) {        path.moveTo(x, y);      } else {        path.lineTo(x, y);      }    }\\    canvas.drawPath(path, paint);  }\\  @override  bool shouldRepaint(covariant WaveformPainter oldDelegate) {    return oldDelegate.animationValue != animationValue ||        oldDelegate.isRecording != isRecording;  }\\}\\  \\// 使用示例\\// VoiceScoreScreen.show(context, word: 'apple', userId: 'user123');\\class VoiceScoreScreenUtils {  static void show(    BuildContext context, {    required String word,    required String userId,    VoidCallback? onComplete,  }) {    Navigator.push(      context,      MaterialPageRoute(        builder: (context) => VoiceScoreScreen(          word: word,          userId: userId,          onComplete: onComplete,        ),      ),    );  }\\}
+import 'package:flutter/material.dart';
+import 'package:race_word_game/services/api_service.dart';
+
+class VoiceScoreScreen extends StatefulWidget {
+  final String word;
+  final String userId;
+  final VoidCallback? onComplete;
+
+  const VoiceScoreScreen({
+    super.key,
+    required this.word,
+    required this.userId,
+    this.onComplete,
+  });
+
+  @override
+  State<VoiceScoreScreen> createState() => _VoiceScoreScreenState();
+}
+
+class _VoiceScoreScreenState extends State<VoiceScoreScreen>
+    with SingleTickerProviderStateMixin {
+  bool _isRecording = false;
+  bool _isProcessing = false;
+  double _score = 0;
+  String _feedback = '';
+  late AnimationController _waveController;
+  List<double> _waveformData = List.filled(30, 0.0);
+
+  @override
+  void initState() {
+    super.initState();
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _waveController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      setState(() {
+        _isRecording = false;
+        _isProcessing = true;
+      });
+      _waveformData = List.filled(30, 0.0);
+
+      // Call API for voice score
+      try {
+        final result = await ApiService.voiceScore(
+          widget.word,
+          widget.userId,
+        );
+        if (mounted) {
+          setState(() {
+            _score = (result['score'] ?? 70).toDouble();
+            _feedback = result['feedback'] ?? '继续加油！💪';
+            _isProcessing = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _score = 70;
+            _feedback = '继续加油！💪';
+            _isProcessing = false;
+          });
+        }
+      }
+    } else {
+      setState(() {
+        _isRecording = true;
+        _score = 0;
+        _feedback = '';
+      });
+      _simulateWaveform();
+    }
+  }
+
+  void _simulateWaveform() {
+    if (!_isRecording) return;
+    setState(() {
+      _waveformData = List.generate(
+        30,
+        (_) => 0.2 + (_isRecording ? (DateTime.now().millisecond % 80) / 100 : 0),
+      );
+    });
+    Future.delayed(const Duration(milliseconds: 100), _simulateWaveform);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('语音评分'),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            // Word display
+            Text(
+              widget.word,
+              style: const TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '请朗读上面的单词',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 40),
+            // Recording area
+            _buildRecordingArea(),
+            const SizedBox(height: 30),
+            // Score display
+            if (_score > 0) _buildScoreDisplay(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecordingArea() {
+    return Column(
+      children: [
+        // Waveform
+        SizedBox(
+          height: 100,
+          child: ListenableBuilder(
+            listenable: _waveController,
+            builder: (context, child) {
+              return CustomPaint(
+                painter: _WaveformPainter(
+                  waveformData: _waveformData,
+                  animationValue: _waveController.value,
+                  isRecording: _isRecording,
+                ),
+                size: Size.infinite,
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 40),
+        // Record button
+        GestureDetector(
+          onTap: _isProcessing ? null : _toggleRecording,
+          child: Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: _isRecording
+                    ? [Colors.red, Colors.orange]
+                    : [Theme.of(context).primaryColor, Colors.blue],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: (_isRecording ? Colors.red : Theme.of(context).primaryColor)
+                      .withOpacity(0.3),
+                  blurRadius: _isRecording ? 20 : 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Icon(
+              _isRecording ? Icons.stop : Icons.mic,
+              color: Colors.white,
+              size: 50,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          _isRecording ? '点击停止录音' : '点击开始录音',
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        ),
+        if (_isProcessing)
+          const Padding(
+            padding: EdgeInsets.only(top: 20),
+            child: CircularProgressIndicator(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildScoreDisplay() {
+    final color = _score >= 90
+        ? Colors.green
+        : _score >= 70
+            ? Colors.orange
+            : Colors.red;
+
+    return Column(
+      children: [
+        Container(
+          width: 150,
+          height: 150,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: color, width: 6),
+          ),
+          child: Center(
+            child: Text(
+              '${_score.round()}',
+              style: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          _feedback,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('完成'),
+        ),
+      ],
+    );
+  }
+}
+
+class _WaveformPainter extends CustomPainter {
+  final List<double> waveformData;
+  final double animationValue;
+  final bool isRecording;
+
+  _WaveformPainter({
+    required this.waveformData,
+    required this.animationValue,
+    required this.isRecording,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = isRecording ? Colors.red.withOpacity(0.6) : Colors.blue.withOpacity(0.3)
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+
+    if (waveformData.isEmpty) return;
+
+    final barWidth = size.width / waveformData.length;
+    final centerY = size.height / 2;
+
+    for (int i = 0; i < waveformData.length; i++) {
+      final barHeight = waveformData[i] * size.height * 0.4;
+      final x = i * barWidth + barWidth / 2;
+      canvas.drawLine(
+        Offset(x, centerY - barHeight / 2),
+        Offset(x, centerY + barHeight / 2),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WaveformPainter oldDelegate) {
+    return oldDelegate.isRecording != isRecording ||
+        oldDelegate.animationValue != animationValue;
+  }
+}
