@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../models/models.dart';
@@ -46,7 +47,7 @@ class _GameScreenState extends State<GameScreen>
   DateTime? _gameStartTime;
   
   // 获取用户ID
-  String? get _userId => _getUserId();
+  String? _userId;
 
   // 倒计时 key 用于触发动画重建
   int _countdownKey = 0;
@@ -58,6 +59,7 @@ class _GameScreenState extends State<GameScreen>
   @override
   void initState() {
     super.initState();
+    _loadUserId();
     _initTts();
     _resultController = AnimationController(
       vsync: this,
@@ -67,6 +69,11 @@ class _GameScreenState extends State<GameScreen>
       parent: _resultController,
       curve: Curves.elasticOut,
     );
+  }
+
+  Future<void> _loadUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) setState(() => _userId = prefs.getString('userId'));
   }
 
   void _initTts() {
@@ -111,18 +118,12 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _speakRandomCard() {
-    final index = _random.nextInt(widget.widgets.length);
+    final index = _random.nextInt(widget.cards.length);
     setState(() {
       _currentCard = widget.cards[index];
       _showFeedback = false;
     });
     _tts.speak(_currentCard!.word);
-  }
-
-  String? _getUserId() {
-    // 这里应该从本地存储获取用户ID
-    // 暂时返回一个固定值
-    return 'test-user-123';
   }
 
   Future<void> _onCardTapped(CardItem card) async {
