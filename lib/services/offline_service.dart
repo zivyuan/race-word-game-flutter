@@ -72,14 +72,15 @@ class OfflineService {
   Future<CardSetInfo> createCardSet(String userId, String name) async {
     CardSetInfo set;
     if (_connectivity.isOnline) {
-      set = await ApiService.createCardSet(userId, name);
+      final detail = await ApiService.createCardSet(userId, name);
+      set = detail.toListItem();
     } else {
       // Generate local ID
       final id = 'local_${DateTime.now().millisecondsSinceEpoch}';
       set = CardSetInfo(
         id: id,
         userId: userId,
-        name: name,
+        title: name,
         createdAt: DateTime.now().toIso8601String(),
       );
     }
@@ -110,7 +111,17 @@ class OfflineService {
 
   Future<CardItem> createCard(String cardSetId, String word, String imagePath) async {
     if (_connectivity.isOnline) {
-      final card = await ApiService.createCard(cardSetId, word, imagePath);
+      // Cook API: 追加 word 到卡片集
+      final cardId = int.tryParse(cardSetId) ?? 0;
+      final detail = await ApiService.getCardDetail(cardId);
+      final updatedWords = [...detail.words, word];
+      await ApiService.updateCard(cardId, words: updatedWords);
+      final card = CardItem(
+        id: '${cardSetId}_${detail.words.length}',
+        cardSetId: cardSetId,
+        word: word,
+        createdAt: DateTime.now().toIso8601String(),
+      );
       await LocalDatabase.saveCard(card);
       return card;
     } else {
@@ -118,7 +129,7 @@ class OfflineService {
       final card = CardItem(
         id: id,
         cardSetId: cardSetId,
-        imageUrl: imagePath, // local path
+        imageUrl: imagePath,
         word: word,
         createdAt: DateTime.now().toIso8601String(),
       );
@@ -131,7 +142,7 @@ class OfflineService {
     await LocalDatabase.deleteLocalCard(id);
     if (_connectivity.isOnline) {
       try {
-        await ApiService.deleteCard(id);
+        await ApiService.deleteCard(int.parse(id));
       } catch (_) {}
     }
   }

@@ -39,7 +39,7 @@ void main() {
       final json = user.toJson();
       expect(json['id'], 'u1');
       expect(json['nickname'], 'Test');
-      expect(json['avatarUrl'], '🐱');
+      expect(json['avatar'], '🐱');
     });
   });
 
@@ -47,9 +47,9 @@ void main() {
     test('fromJson with all fields', () {
       final json = {
         'id': 'cs-001',
-        'userId': 'u-001',
-        'name': '动物单词',
-        'createdAt': '2026-01-01T00:00:00Z',
+        'owner_id': 'u-001',
+        'title': '动物单词',
+        'created_at': '2026-01-01T00:00:00Z',
       };
       final cs = CardSetInfo.fromJson(json);
       expect(cs.id, 'cs-001');
@@ -61,9 +61,9 @@ void main() {
     test('fromJson with null createdAt defaults to empty string', () {
       final json = {
         'id': 'cs-002',
-        'userId': 'u-002',
-        'name': '水果',
-        'createdAt': null,
+        'owner_id': 'u-002',
+        'title': '水果',
+        'created_at': null,
       };
       final cs = CardSetInfo.fromJson(json);
       expect(cs.createdAt, '');

@@ -143,7 +143,10 @@ class _CardSetDetailScreenState extends State<CardSetDetailScreen> {
         return;
       }
 
-      await ApiService.createCard(widget.cardSet.id, word, image.path);
+      // Cook API: 更新卡片集，追加新 word
+      final detail = await ApiService.getCardDetail(widget.cardSet.idInt);
+      final updatedWords = [...detail.words, word];
+      await ApiService.updateCard(widget.cardSet.idInt, words: updatedWords);
       if (mounted) _loadCards();
     } catch (e) {
       if (mounted) {
@@ -172,7 +175,7 @@ class _CardSetDetailScreenState extends State<CardSetDetailScreen> {
     );
     if (confirmed != true) return;
     try {
-      await ApiService.deleteCard(id);
+      await ApiService.deleteCard(int.parse(id));
       _loadCards();
     } catch (e) {
       if (mounted) {

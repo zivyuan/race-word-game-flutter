@@ -8,7 +8,7 @@ void main() {
   final testCardSet = CardSetInfo(
     id: 'cs-1',
     userId: 'u-1',
-    name: '动物单词',
+    title: '动物单词',
     createdAt: '2026-01-01T00:00:00Z',
   );
 

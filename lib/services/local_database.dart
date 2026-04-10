@@ -185,7 +185,7 @@ class LocalDatabase {
     return rows.map((r) => CardSetInfo(
       id: r['id'] as String,
       userId: r['user_id'] as String,
-      name: r['name'] as String,
+      title: r['name'] as String,
       createdAt: r['created_at'] as String? ?? '',
     )).toList();
   }
