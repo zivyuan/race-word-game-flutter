@@ -199,7 +199,7 @@ class ApiService {
     if (avatar != null) body['avatar'] = avatar;
 
     final res = await _requestWithRetry(
-      () => http.patch(
+      () => http.put(
         Uri.parse('$baseUrl/api/v1/users/me'),
         headers: _headers,
         body: jsonEncode(body),
@@ -318,7 +318,7 @@ class ApiService {
     if (words != null) body['words'] = words;
 
     final res = await _requestWithRetry(
-      () => http.patch(
+      () => http.put(
         Uri.parse('$baseUrl/api/v1/cards/$cardId'),
         headers: _headers,
         body: jsonEncode(body),
@@ -337,16 +337,21 @@ class ApiService {
     );
   }
 
-  /// 获取所有可用分类
+  /// 获取所有可用分类（后端未实现时返回本地枚举）
   static Future<List<String>> getCategories() async {
-    final res = await _requestWithRetry(
-      () => http.get(
-        Uri.parse('$baseUrl/api/v1/cards/categories/list'),
-        headers: _headers,
-      ),
-    );
-    final list = _parseJsonList(res);
-    return list.map((e) => e.toString()).toList();
+    try {
+      final res = await _requestWithRetry(
+        () => http.get(
+          Uri.parse('$baseUrl/api/v1/cards/categories/list'),
+          headers: _headers,
+        ),
+      );
+      final list = _parseJsonList(res);
+      return list.map((e) => e.toString()).toList();
+    } catch (_) {
+      // 后端未实现，返回本地分类
+      return CardCategory.values.map((e) => e.name).toList();
+    }
   }
 
   // ================================================================
