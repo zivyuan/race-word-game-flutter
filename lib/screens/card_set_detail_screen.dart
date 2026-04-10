@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
 import 'game_screen.dart';
+import 'card_browser_screen.dart';
 
 class CardSetDetailScreen extends StatefulWidget {
   final CardSetInfo cardSet;
@@ -204,7 +205,49 @@ class _CardSetDetailScreenState extends State<CardSetDetailScreen> {
         ),
         title: Text(widget.cardSet.name),
         actions: [
-          if (_cards.isNotEmpty)
+          if (_cards.isNotEmpty) ...[
+            BounceButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CardBrowserScreen(
+                      cardSet: widget.cardSet,
+                      cards: _cards,
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(right: AppTheme.spacingSm),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusFull),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.visibility_rounded,
+                        color: AppTheme.primaryColor, size: 20),
+                    SizedBox(width: 4),
+                    Text(
+                      '浏览',
+                      style: TextStyle(
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             BounceButton(
               onPressed: () {
                 Navigator.push(
@@ -245,6 +288,7 @@ class _CardSetDetailScreenState extends State<CardSetDetailScreen> {
                 ),
               ),
             ),
+          ],
         ],
       ),
       body: _loading

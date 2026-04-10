@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 /// AR Service stub - camera package not configured.
 /// TODO: Add camera dependency and implement AR features.
 class ArService {

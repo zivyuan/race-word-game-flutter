@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
+import 'login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
@@ -175,6 +176,28 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     ),
                   ),
                 ),
+                const SizedBox(height: AppTheme.spacingMd),
+                FadeIn(
+                  delay: const Duration(milliseconds: 700),
+                  child: BounceButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => LoginScreen(onComplete: widget.onComplete),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      '已有账号？登录',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -195,6 +218,24 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: BounceButton(
+                    onPressed: () => _goToStep(0),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.textHint.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        color: AppTheme.textSecondary,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
                 FadeIn(
                   child: Container(
                     width: 100,
@@ -315,6 +356,24 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: BounceButton(
+                    onPressed: () => _goToStep(1),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.textHint.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        color: AppTheme.textSecondary,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
                 FadeIn(
                   child: PulseAnimation(
                     child: Container(

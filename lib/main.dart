@@ -29,6 +29,11 @@ class RaceWordGameApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       home: const _AppEntry(),
+      routes: {
+        '/onboarding': (_) => OnboardingScreen(
+          onComplete: () {},
+        ),
+      },
     );
   }
 }

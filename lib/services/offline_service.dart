@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/local_database.dart';
@@ -24,6 +25,35 @@ class OfflineService {
   }
 
   bool get isOnline => _connectivity.isOnline;
+
+  // === User Profile ===
+  Future<UserProfile?> getUserProfile(String userId) async {
+    if (_connectivity.isOnline) {
+      try {
+        final user = await ApiService.getUser(userId);
+        if (user != null) {
+          // Cache user profile locally
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('cached_user_${user.id}', jsonEncode(user.toJson()));
+        }
+        return user;
+      } catch (_) {
+        // Fall back to local cache
+      }
+    }
+    return _getCachedUserProfile(userId);
+  }
+
+  Future<UserProfile?> _getCachedUserProfile(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString('cached_user_$userId');
+      if (cached != null) {
+        return UserProfile.fromJson(jsonDecode(cached));
+      }
+    } catch (_) {}
+    return null;
+  }
 
   // === Card Sets ===
   Future<List<CardSetInfo>> getCardSets(String userId) async {
@@ -108,17 +138,23 @@ class OfflineService {
 
   // === Game Records ===
   Future<void> recordShown(String cardId) async {
+    // Always save locally for sync
+    await LocalDatabase.addUnsyncedRecord(cardId, 0);
     if (_connectivity.isOnline) {
       try {
         await ApiService.recordShown(cardId);
+        await LocalDatabase.markCardRecordSynced(cardId);
       } catch (_) {}
     }
   }
 
   Future<void> recordKnown(String cardId) async {
+    // Always save locally for sync
+    await LocalDatabase.addUnsyncedRecord(cardId, 1);
     if (_connectivity.isOnline) {
       try {
         await ApiService.recordKnown(cardId);
+        await LocalDatabase.markCardRecordSynced(cardId);
       } catch (_) {}
     }
   }
@@ -147,6 +183,12 @@ class OfflineService {
       }
       await LocalDatabase.markRecordsSynced();
     } catch (_) {}
+  }
+
+  /// Trigger a manual sync (e.g., when network recovers)
+  Future<void> syncNow() async {
+    if (!_connectivity.isOnline) return;
+    await _syncUnsentRecords();
   }
 
   Future<bool> healthCheck() => ApiService.healthCheck();

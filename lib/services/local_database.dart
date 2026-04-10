@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/models.dart';
@@ -535,6 +534,35 @@ class LocalDatabase {
   static Future<void> markRecordsSynced() async {
     final db = await database;
     await db.update('game_records', {'synced': 1}, where: 'synced = 0');
+  }
+
+  // === Offline Sync Helpers ===
+  static Future<void> addUnsyncedRecord(String cardId, int correct) async {
+    final db = await database;
+    // Find the card to get cardSetId and userId
+    final cardRows = await db.query('cards', where: 'id = ?', whereArgs: [cardId]);
+    if (cardRows.isEmpty) return;
+    final cardSetId = cardRows[0]['card_set_id'] as String;
+    // Find userId from card_set
+    final setRows = await db.query('card_sets', where: 'id = ?', whereArgs: [cardSetId]);
+    final userId = setRows.isNotEmpty ? setRows[0]['user_id'] as String : '';
+    await db.insert('game_records', {
+      'card_id': cardId,
+      'card_set_id': cardSetId,
+      'user_id': userId,
+      'correct': correct,
+      'synced': 0,
+    });
+  }
+
+  static Future<void> markCardRecordSynced(String cardId) async {
+    final db = await database;
+    await db.update(
+      'game_records',
+      {'synced': 1},
+      where: 'card_id = ? AND synced = 0',
+      whereArgs: [cardId],
+    );
   }
 
   static Future<bool> hasLocalData(String userId) async {

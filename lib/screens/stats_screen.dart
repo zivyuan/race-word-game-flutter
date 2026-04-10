@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../services/analytics_service.dart';
 import '../services/share_service.dart';

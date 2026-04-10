@@ -77,47 +77,6 @@ class _BounceButtonState extends State<BounceButton>
   }
 }
 
-// === AnimatedBuilder wrapper ===
-// Just re-export Flutter's built-in AnimatedBuilder via an alias
-typedef AnimatedBuilder = _AnimBuilder;
-
-class _AnimBuilder extends StatelessWidget {
-  final Animation<double> animation;
-  final Widget Function(BuildContext context, Widget? child) builder;
-  final Widget? child;
-
-  const _AnimBuilder({
-    required this.animation,
-    required this.builder,
-    this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder2(
-      listenable: animation,
-      builder: builder,
-      child: child,
-    );
-  }
-}
-
-class AnimatedBuilder2 extends AnimatedWidget {
-  final Widget Function(BuildContext context, Widget? child) builder;
-  final Widget? child;
-
-  const AnimatedBuilder2({
-    required Animation<double> listenable,
-    required this.builder,
-    this.child,
-  }) : super(listenable: listenable);
-
-  @override
-  Widget build(BuildContext context) {
-    return builder(context, child);
-  }
-}
-
 // === 淡入动画 ===
 class FadeIn extends StatefulWidget {
   final Widget child;

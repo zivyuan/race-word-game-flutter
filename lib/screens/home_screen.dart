@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
 import 'card_set_detail_screen.dart';
 import 'create_card_set_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -125,17 +126,28 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withOpacity(0.08),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  _user?.avatarUrl ?? '🐶',
-                                  style: const TextStyle(fontSize: 30),
+                            GestureDetector(
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ProfileScreen(),
+                                  ),
+                                );
+                                _loadUser();
+                              },
+                              child: Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryColor.withOpacity(0.08),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _user?.avatarUrl ?? '🐶',
+                                    style: const TextStyle(fontSize: 30),
+                                  ),
                                 ),
                               ),
                             ),
