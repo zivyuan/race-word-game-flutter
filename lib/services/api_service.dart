@@ -5,11 +5,11 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 
-/// API 服务层 — 对齐 Cook 后端 API_DOC.md
+/// API 服务层 — 对齐 Cook 后端 API (Boss 规范)
 ///
 /// Base URL: http://<host>:8000
 /// 认证: JWT Bearer Token
-/// 路由: /api/auth/*, /api/users/*, /api/cards/*
+/// 路由: /api/v1/auth/*, /api/v1/users/*, /api/v1/cards/*
 class ApiService {
   // === 配置 ===
   static String baseUrl = 'http://10.0.2.2:8000'; // Android 模拟器访问本机
@@ -125,7 +125,7 @@ class ApiService {
   }) async {
     final res = await _requestWithRetry(
       () => http.post(
-        Uri.parse('$baseUrl/api/auth/register'),
+        Uri.parse('$baseUrl/api/v1/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': username,
@@ -145,7 +145,7 @@ class ApiService {
   }) async {
     final res = await _requestWithRetry(
       () => http.post(
-        Uri.parse('$baseUrl/api/auth/login'),
+        Uri.parse('$baseUrl/api/v1/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': username,
@@ -182,7 +182,7 @@ class ApiService {
   static Future<UserProfile> getMe() async {
     final res = await _requestWithRetry(
       () => http.get(
-        Uri.parse('$baseUrl/api/users/me'),
+        Uri.parse('$baseUrl/api/v1/users/me'),
         headers: _headers,
       ),
     );
@@ -199,8 +199,8 @@ class ApiService {
     if (avatar != null) body['avatar'] = avatar;
 
     final res = await _requestWithRetry(
-      () => http.put(
-        Uri.parse('$baseUrl/api/users/me'),
+      () => http.patch(
+        Uri.parse('$baseUrl/api/v1/users/me'),
         headers: _headers,
         body: jsonEncode(body),
       ),
@@ -212,7 +212,7 @@ class ApiService {
   static Future<UserProfile> getUserById(int userId) async {
     final res = await _requestWithRetry(
       () => http.get(
-        Uri.parse('$baseUrl/api/users/$userId'),
+        Uri.parse('$baseUrl/api/v1/users/$userId'),
         headers: _headers,
       ),
     );
@@ -234,7 +234,7 @@ class ApiService {
   }) async {
     final res = await _requestWithRetry(
       () => http.post(
-        Uri.parse('$baseUrl/api/cards'),
+        Uri.parse('$baseUrl/api/v1/cards'),
         headers: _headers,
         body: jsonEncode({
           'title': title,
@@ -265,7 +265,7 @@ class ApiService {
     if (difficulty != null) params['difficulty'] = difficulty.toString();
     if (ownerId != null) params['owner_id'] = ownerId.toString();
 
-    final uri = Uri.parse('$baseUrl/api/cards').replace(queryParameters: params);
+    final uri = Uri.parse('$baseUrl/api/v1/cards').replace(queryParameters: params);
     final res = await _requestWithRetry(
       () => http.get(uri, headers: _headers),
     );
@@ -278,7 +278,7 @@ class ApiService {
     int skip = 0,
     int limit = 20,
   }) async {
-    final uri = Uri.parse('$baseUrl/api/cards/mine').replace(
+    final uri = Uri.parse('$baseUrl/api/v1/cards/mine').replace(
       queryParameters: {'skip': skip.toString(), 'limit': limit.toString()},
     );
     final res = await _requestWithRetry(
@@ -292,7 +292,7 @@ class ApiService {
   static Future<CardDetail> getCardDetail(int cardId) async {
     final res = await _requestWithRetry(
       () => http.get(
-        Uri.parse('$baseUrl/api/cards/$cardId'),
+        Uri.parse('$baseUrl/api/v1/cards/$cardId'),
         headers: _headers,
       ),
     );
@@ -318,8 +318,8 @@ class ApiService {
     if (words != null) body['words'] = words;
 
     final res = await _requestWithRetry(
-      () => http.put(
-        Uri.parse('$baseUrl/api/cards/$cardId'),
+      () => http.patch(
+        Uri.parse('$baseUrl/api/v1/cards/$cardId'),
         headers: _headers,
         body: jsonEncode(body),
       ),
@@ -331,10 +331,22 @@ class ApiService {
   static Future<void> deleteCard(int cardId) async {
     await _requestWithRetry(
       () => http.delete(
-        Uri.parse('$baseUrl/api/cards/$cardId'),
+        Uri.parse('$baseUrl/api/v1/cards/$cardId'),
         headers: _headers,
       ),
     );
+  }
+
+  /// 获取所有可用分类
+  static Future<List<String>> getCategories() async {
+    final res = await _requestWithRetry(
+      () => http.get(
+        Uri.parse('$baseUrl/api/v1/cards/categories/list'),
+        headers: _headers,
+      ),
+    );
+    final list = _parseJsonList(res);
+    return list.map((e) => e.toString()).toList();
   }
 
   // ================================================================
