@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
@@ -12,7 +13,14 @@ import '../models/models.dart';
 /// 路由: /api/v1/auth/*, /api/v1/users/*, /api/v1/cards/*
 class ApiService {
   // === 配置 ===
-  static String baseUrl = 'http://10.0.2.2:8000'; // Android 模拟器访问本机
+  /// 可通过 --dart-define=API_BASE_URL=... 覆盖。
+  /// debug 默认 10.0.2.2（Android 模拟器访问宿主机）；release 用正式域名占位。
+  static String baseUrl = const String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: kReleaseMode
+        ? 'https://api.raceword.example.com' // TODO: 替换正式域名
+        : 'http://10.0.2.2:8000',
+  );
   static const Duration _defaultTimeout = Duration(seconds: 10);
 
   // === JWT Token 管理 ===

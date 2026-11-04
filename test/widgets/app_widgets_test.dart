@@ -406,6 +406,7 @@ void main() {
       await tester.pumpWidget(wrapWithMaterial(
         const StreakFire(streak: 3),
       ));
+      await tester.pumpAndSettle(); // StreakFire 内部 FadeIn 动画
 
       expect(find.text('🔥'), findsOneWidget);
       expect(find.text('x3'), findsOneWidget);

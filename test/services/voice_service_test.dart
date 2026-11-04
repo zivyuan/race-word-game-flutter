@@ -74,7 +74,8 @@ void main() {
     });
 
     test('completely different lengths', () {
-      final result = voiceService.evaluatePronunciation('a', 'abcdefghijklmnopqrstuvwxyz');
+      // 注意：evaluatePronunciation 有"包含即匹配"规则，不能用包含 expected 的长串
+      final result = voiceService.evaluatePronunciation('a', 'zzzzzzzz');
       // Levenshtein similarity with very short expected and long spoken
       expect(result.score, lessThan(1.0));
       expect(result.grade, PronunciationGrade.none);

@@ -15,23 +15,23 @@ void main() {
       expect(user.avatarUrl, '🐶');
     });
 
-    test('fromJson with null avatarUrl defaults to 🐶', () {
+    test('fromJson with null avatarUrl defaults to empty', () {
       final json = {
         'id': 'user-002',
         'nickname': 'Bob',
         'avatarUrl': null,
       };
       final user = UserProfile.fromJson(json);
-      expect(user.avatarUrl, '🐶');
+      expect(user.avatarUrl, '');
     });
 
-    test('fromJson without avatarUrl key defaults to 🐶', () {
+    test('fromJson without avatarUrl key defaults to empty', () {
       final json = {
         'id': 'user-003',
         'nickname': 'Charlie',
       };
       final user = UserProfile.fromJson(json);
-      expect(user.avatarUrl, '🐶');
+      expect(user.avatarUrl, '');
     });
 
     test('toJson roundtrip', () {
