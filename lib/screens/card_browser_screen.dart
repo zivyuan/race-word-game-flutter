@@ -46,7 +46,7 @@ class _CardBrowserScreenState extends State<CardBrowserScreen>
 
   Future<void> _loadGameRecords() async {
     try {
-      final stats = await ApiService.getGameStats(widget.cardSet.id);
+      final stats = await ApiService.getGameStats(widget.cardSet.userId); // 后端按 userId 聚合
       if (mounted) setState(() => _gameRecords = stats);
     } catch (_) {}
   }
@@ -102,9 +102,9 @@ class _CardBrowserScreenState extends State<CardBrowserScreen>
 
     // Record to API
     if (result == 'known') {
-      ApiService.recordKnown(card.id);
+      ApiService.recordKnown(card.id, userId: widget.cardSet.userId);
     } else {
-      ApiService.recordShown(card.id);
+      ApiService.recordShown(card.id, userId: widget.cardSet.userId);
     }
 
     if (_currentIndex < widget.cards.length - 1) {

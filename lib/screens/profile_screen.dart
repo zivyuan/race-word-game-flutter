@@ -63,24 +63,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ]);
 
       final sets = results[0] as List<CardSetInfo>;
+
+      // 后端按 userId 聚合统计，取一次即可（不再逐卡组请求）
+      try {
+        final stats = await ApiService.getGameStats(userId);
+        for (final stat in stats) {
+          if (stat.timesShown > 0) {
+            _gameSessions++;
+            _accuracy += stat.timesKnown / stat.timesShown;
+          }
+        }
+      } catch (_) {}
+
       final achievements = results[1] as List<UserAchievementModel>;
 
       // Load cards count for each set
       int totalCards = 0;
       for (final set in sets) {
         try {
-          final cards = await ApiService.getCards(set.id);
+          final cards = await ApiService.getCards(set.id, userId: set.userId);
           totalCards += cards.length;
-          // Get game stats for accuracy calculation
-          try {
-            final stats = await ApiService.getGameStats(set.id);
-            for (final stat in stats) {
-              if (stat.timesShown > 0) {
-                _gameSessions++;
-                _accuracy += stat.timesKnown / stat.timesShown;
-              }
-            }
-          } catch (_) {}
         } catch (_) {}
       }
 

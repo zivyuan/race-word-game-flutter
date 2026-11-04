@@ -160,9 +160,9 @@ class _GameScreenState extends State<GameScreen>
     });
 
     try {
-      await ApiService.recordShown(_currentCard!.id);
+      await ApiService.recordShown(_currentCard!.id, userId: widget.cardSet.userId);
       if (correct) {
-        await ApiService.recordKnown(_currentCard!.id);
+        await ApiService.recordKnown(_currentCard!.id, userId: widget.cardSet.userId);
       }
     } catch (_) {}
 

@@ -25,6 +25,8 @@ class ApiService {
 
   // === JWT Token 管理 ===
   static String? _token;
+  /// 当前登录用户 id（兼容路由 record-* 需要 userId 时使用）
+  static String? currentUserId;
   static const _tokenKey = 'jwt_token';
 
   /// 从本地存储恢复 token
@@ -143,7 +145,12 @@ class ApiService {
       ),
     );
     final data = _parseJson(res);
-    return UserProfile.fromJson(data);
+    // 响应格式：{access_token, token_type, user:{...}}
+    final token = data['access_token'] as String?;
+    if (token != null) await _saveToken(token);
+    final user = UserProfile.fromJson(data['user'] as Map<String, dynamic>);
+    currentUserId = user.id;
+    return user;
   }
 
   /// 登录 → 拿到 JWT token → 自动保存
@@ -346,22 +353,6 @@ class ApiService {
   }
 
   /// 获取所有可用分类（后端未实现时返回本地枚举）
-  static Future<List<String>> getCategories() async {
-    try {
-      final res = await _requestWithRetry(
-        () => http.get(
-          Uri.parse('$baseUrl/api/v1/cards/categories/list'),
-          headers: _headers,
-        ),
-      );
-      final list = _parseJsonList(res);
-      return list.map((e) => e.toString()).toList();
-    } catch (_) {
-      // 后端未实现，返回本地分类
-      return CardCategory.values.map((e) => e.name).toList();
-    }
-  }
-
   // ================================================================
   // 4. 健康检查
   // ================================================================
@@ -455,39 +446,153 @@ class ApiService {
   }
 
   /// @deprecated 使用 getMyCards() 代替
+  /// 卡组列表：GET /api/cardsets?userId={uuid}（旧兼容路由）
   static Future<List<CardListItem>> getCardSets(String userId) async {
-    return getMyCards();
+    final res = await _requestWithRetry(() => http.get(
+      Uri.parse('$baseUrl/api/cardsets').replace(queryParameters: {'userId': userId}),
+      headers: _headers,
+    ));
+    final data = _parseJsonList(res);
+    return data
+        .map((e) => CardListItem.fromJson({
+              'id': e['id'],
+              'title': e['name'],
+              'word_count': e['cardCount'],
+              'owner_id': e['userId'],
+              'created_at': e['createdAt'],
+            }))
+        .toList();
   }
 
-  /// @deprecated 使用 createCard() 代替
-  static Future<CardDetail> createCardSet(String userId, String name) async {
-    return createCard(title: name, words: []);
+  /// 建卡组：POST /api/cardsets {userId, name}
+  static Future<CardListItem> createCardSet(String userId, String name) async {
+    final res = await _requestWithRetry(() => http.post(
+      Uri.parse('$baseUrl/api/cardsets'),
+      headers: _headers,
+      body: jsonEncode({'userId': userId, 'name': name}),
+    ));
+    final e = _parseJson(res) as Map<String, dynamic>;
+    return CardListItem.fromJson({
+      'id': e['id'],
+      'title': e['name'],
+      'word_count': e['cardCount'],
+      'owner_id': e['userId'],
+      'created_at': e['createdAt'],
+    });
   }
 
-  /// @deprecated 使用 deleteCard() 代替
+  /// 改名：PUT /api/cardsets/{id} {name}
+  static Future<void> renameCardSet(String id, String name) async {
+    await _requestWithRetry(() => http.put(
+      Uri.parse('$baseUrl/api/cardsets/$id'),
+      headers: _headers,
+      body: jsonEncode({'name': name}),
+    ));
+  }
+
+  /// 删卡组（级联）：DELETE /api/cardsets/{id}?userId=
   static Future<void> deleteCardSet(String id, String userId) async {
-    await deleteCard(int.parse(id));
+    final uri = Uri.parse('$baseUrl/api/cardsets/$id')
+        .replace(queryParameters: {'userId': userId});
+    await _requestWithRetry(() => http.delete(uri, headers: _headers));
   }
 
-  /// @deprecated 使用 getCardDetail() 获取 words 代替
-  static Future<List<CardItem>> getCards(String cardSetId) async {
-    try {
-      final detail = await getCardDetail(int.parse(cardSetId));
-      return detail.words.asMap().entries.map((e) => CardItem(
-        id: '${detail.id}_${e.key}',
-        cardSetId: detail.id.toString(),
-        word: e.value,
-        createdAt: detail.createdAt,
-      )).toList();
-    } catch (_) {
-      return [];
-    }
+  /// 卡组内建卡：POST /api/v1/cards {word, cardSetId, imageUrl?}（JWT）
+  /// 注：后端暂无图片上传接口，相机图暂无法上传，仅存单词（TODO: 等 Cook 补上传）
+  static Future<CardItem> createCardInSet(
+    String cardSetId,
+    String word, {
+    String imageUrl = '',
+  }) async {
+    final res = await _requestWithRetry(
+      () => http.post(
+        Uri.parse('$baseUrl/api/v1/cards'),
+        headers: _headers,
+        body: jsonEncode({
+          'word': word,
+          'cardSetId': cardSetId,
+          'imageUrl': imageUrl,
+        }),
+      ),
+    );
+    return CardItem.fromJson(_parseJson(res));
   }
 
-  /// @deprecated 游戏 API 暂未实现
-  static Future<void> recordShown(String cardId) async {}
-  static Future<void> recordKnown(String cardId) async {}
-  static Future<List<GameRecordInfo>> getGameStats(String cardSetId) async => [];
+  /// 删卡（uuid）：DELETE /api/v1/cards/{cardId}（JWT）
+  static Future<void> deleteCardById(String cardId) async {
+    await _requestWithRetry(
+      () => http.delete(Uri.parse('$baseUrl/api/v1/cards/$cardId'), headers: _headers));
+  }
+
+  /// 卡组内卡片：GET /api/cardsets/{id}/cards?userId={uuid}
+  static Future<List<CardItem>> getCards(String cardSetId, {String? userId}) async {
+    final uri = Uri.parse('$baseUrl/api/cardsets/$cardSetId/cards').replace(
+      queryParameters: {if (userId != null) 'userId': userId},
+    );
+    final res = await _requestWithRetry(() => http.get(uri, headers: _headers));
+    final data = _parseJsonList(res);
+    return data.map((e) => CardItem.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// 展示 +1：POST /api/cards/{cardId}/record-shown?userId=（upsert）
+  static Future<void> recordShown(String cardId, {String? userId}) async {
+    final uid = userId ?? currentUserId;
+    final uri = Uri.parse('$baseUrl/api/cards/$cardId/record-shown')
+        .replace(queryParameters: {if (uid != null) 'userId': uid});
+    await _requestWithRetry(() => http.post(uri, headers: _headers));
+  }
+
+  /// 认识 +1：POST /api/cards/{cardId}/record-known?userId=（upsert）
+  static Future<void> recordKnown(String cardId, {String? userId}) async {
+    final uid = userId ?? currentUserId;
+    final uri = Uri.parse('$baseUrl/api/cards/$cardId/record-known')
+        .replace(queryParameters: {if (uid != null) 'userId': uid});
+    await _requestWithRetry(() => http.post(uri, headers: _headers));
+  }
+
+  /// 逐卡统计（映射为 GameRecordInfo）：GET /api/game/stats?userId={uuid}
+  /// 注意后端按 userId 聚合，客户端不区分 cardSet，调用方传 userId。
+  static Future<List<GameRecordInfo>> getGameStats(String userId) async {
+    final res = await _requestWithRetry(() => http.get(
+      Uri.parse('$baseUrl/api/game/stats').replace(queryParameters: {'userId': userId}),
+      headers: _headers,
+    ));
+    final data = _parseJson(res) as Map<String, dynamic>;
+    final cards = (data['cards'] as List? ?? [])
+        .map((e) => e as Map<String, dynamic>)
+        .toList();
+    return cards.map((e) {
+      final shown = (e['timesShown'] as num?)?.toInt() ?? 0;
+      final known = (e['timesKnown'] as num?)?.toInt() ?? 0;
+      String mastery = 'new';
+      if (shown > 0 && known / shown >= 0.8) {
+        mastery = 'mastered';
+      } else if (known > 0) {
+        mastery = 'learning';
+      }
+      return GameRecordInfo(
+        card: CardItem(
+          id: e['cardId']?.toString() ?? '',
+          word: e['word'] as String? ?? '',
+          imageUrl: e['imageUrl'] as String? ?? '',
+        ),
+        timesShown: shown,
+        timesKnown: known,
+        lastPlayedAt: e['lastPlayedAt'] as String?,
+        masteryLevel: mastery,
+      );
+    }).toList();
+  }
+
+  /// 聚合统计原始返回（总量/正确率/连击等）：GET /api/game/stats?userId={uuid}
+  static Future<Map<String, dynamic>> getGameStatsRaw(String userId) async {
+    final res = await _requestWithRetry(() => http.get(
+      Uri.parse('$baseUrl/api/game/stats').replace(queryParameters: {'userId': userId}),
+      headers: _headers,
+    ));
+    return _parseJson(res) as Map<String, dynamic>;
+  }
+
   static Future<List<Map<String, dynamic>>> getGameHistory(
     String userId, {int limit = 20}
   ) async => [];

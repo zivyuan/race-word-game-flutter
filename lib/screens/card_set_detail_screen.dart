@@ -30,7 +30,7 @@ class _CardSetDetailScreenState extends State<CardSetDetailScreen> {
 
   Future<void> _loadCards() async {
     try {
-      final cards = await ApiService.getCards(widget.cardSet.id);
+      final cards = await ApiService.getCards(widget.cardSet.id, userId: widget.cardSet.userId);
       setState(() {
         _cards = cards;
         _loading = false;
@@ -143,10 +143,8 @@ class _CardSetDetailScreenState extends State<CardSetDetailScreen> {
         return;
       }
 
-      // Cook API: 更新卡片集，追加新 word
-      final detail = await ApiService.getCardDetail(widget.cardSet.idInt);
-      final updatedWords = [...detail.words, word];
-      await ApiService.updateCard(widget.cardSet.idInt, words: updatedWords);
+      // v1 接口：在卡组内建卡（后端暂无上传接口，相机图先不上传）
+      await ApiService.createCardInSet(widget.cardSet.id, word);
       if (mounted) _loadCards();
     } catch (e) {
       if (mounted) {
@@ -175,7 +173,7 @@ class _CardSetDetailScreenState extends State<CardSetDetailScreen> {
     );
     if (confirmed != true) return;
     try {
-      await ApiService.deleteCard(int.parse(id));
+      await ApiService.deleteCardById(id);
       _loadCards();
     } catch (e) {
       if (mounted) {

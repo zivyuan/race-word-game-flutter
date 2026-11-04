@@ -72,8 +72,8 @@ class OfflineService {
   Future<CardSetInfo> createCardSet(String userId, String name) async {
     CardSetInfo set;
     if (_connectivity.isOnline) {
-      final detail = await ApiService.createCardSet(userId, name);
-      set = detail.toListItem();
+      // createCardSet 现在直接返回 CardSetInfo
+      set = await ApiService.createCardSet(userId, name);
     } else {
       // Generate local ID
       final id = 'local_${DateTime.now().millisecondsSinceEpoch}';
@@ -170,14 +170,14 @@ class OfflineService {
     }
   }
 
-  Future<List<GameRecordInfo>> getGameStats(String cardSetId) async {
+  Future<List<GameRecordInfo>> getGameStats(String userId) async {
     if (_connectivity.isOnline) {
       try {
-        final stats = await ApiService.getGameStats(cardSetId);
+        final stats = await ApiService.getGameStats(userId);
         return stats;
       } catch (_) {}
     }
-    return LocalDatabase.getLocalGameStats(cardSetId);
+    return LocalDatabase.getLocalGameStats(userId);
   }
 
   // === Sync ===
